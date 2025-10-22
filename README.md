@@ -1,5 +1,7 @@
 # Calculator Application
 
+Note: This repository accompanies the Medium article ["The Return of Assembly — When LLMs No Longer Need High-Level Languages"](https://medium.com/@ionionascu/the-return-of-assembly-when-llms-no-longer-need-high-level-languages-79bc43c0822c)
+
 **An experimental project by Ion Ionascu**
 
 A complete calculator application written in ARM64 assembly language for macOS, specifically targeting the Apple M4 Max processor. This project demonstrates low-level systems programming concepts while providing a functional command-line calculator that prompts users to enter two numbers on separate lines and displays their sum.
