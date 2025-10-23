@@ -49,33 +49,49 @@ _main:
     adrp x1, buffer1@PAGE
     add x1, x1, buffer1@PAGEOFF
     bl parse_number
-    cmp x1, #0
+    cmp x2, #0
     b.ne error_exit
     mov x19, x0  // Store first number in x19
+    mov x23, x1  // Save position after first number
 
-    // Check if we have a second line in the buffer
-    adrp x1, buffer1@PAGE
-    add x1, x1, buffer1@PAGEOFF
-    mov x23, x1  // Save start position
-find_newline:
+    // Check if we have a second number in the buffer (space or newline separated)
+    // x1 now points to character after the first number
+find_delimiter:
     ldrb w2, [x1], #1
     cmp w2, #'\n'
-    b.eq check_second_line
+    b.eq check_second_number
+    cmp w2, #' '
+    b.eq check_second_number
+    cmp w2, #'\t'
+    b.eq check_second_number
     cmp w2, #0
     b.eq need_second_read
     sub x22, x22, #1
     cmp x22, #0
-    b.gt find_newline
+    b.gt find_delimiter
     b need_second_read
 
-check_second_line:
-    // Check if there's data after the newline
+check_second_number:
+    // Skip additional whitespace after delimiter
+skip_delim_ws:
+    ldrb w2, [x1]
+    cmp w2, #' '
+    b.eq skip_delim_char
+    cmp w2, #'\t'
+    b.eq skip_delim_char
+    b check_has_data
+skip_delim_char:
+    add x1, x1, #1
+    b skip_delim_ws
+
+check_has_data:
+    // Check if there's data after the delimiter
     ldrb w2, [x1]
     cmp w2, #0
     b.eq need_second_read
     cmp w2, #'\n'
     b.eq need_second_read
-    // We have the second line, parse it
+    // We have the second number, parse it
     b parse_second_from_buffer
 
 need_second_read:
@@ -100,7 +116,7 @@ need_second_read:
     adrp x1, buffer2@PAGE
     add x1, x1, buffer2@PAGEOFF
     bl parse_number
-    cmp x1, #0
+    cmp x2, #0
     b.ne error_exit
     mov x20, x0  // Store second number in x20
     b done_input
@@ -117,7 +133,7 @@ parse_second_from_buffer:
     // Parse second number from buffer1
     mov x1, x23  // Restore buffer position
     bl parse_number
-    cmp x1, #0
+    cmp x2, #0
     b.ne error_exit
     mov x20, x0  // Store second number in x20
 
@@ -181,6 +197,19 @@ parse_number:
     mov x4, #0   // sign (0=positive, 1=negative)
     mov x5, #0   // digit count
     
+    // Skip leading whitespace (space, tab)
+skip_whitespace:
+    ldrb w2, [x1]
+    cmp w2, #' '
+    b.eq skip_ws_char
+    cmp w2, #'\t'
+    b.eq skip_ws_char
+    b check_sign
+skip_ws_char:
+    add x1, x1, #1
+    b skip_whitespace
+    
+check_sign:
     // Check for negative
     ldrb w2, [x1]
     cmp w2, #'-'
@@ -211,14 +240,14 @@ check_end:
     neg x0, x0
 
 parse_ok:
-    // Set x1 to 0 to indicate success
-    mov x1, #0
+    // Set x2 to 0 to indicate success, x1 points to position after the number
+    mov x2, #0
     ldp x29, x30, [sp], #16
     ret
 
 parse_error:
-    // Set x1 to 1 to indicate error, x0 is undefined
-    mov x1, #1
+    // Set x2 to 1 to indicate error, x0 is undefined
+    mov x2, #1
     ldp x29, x30, [sp], #16
     ret
 
