@@ -130,7 +130,7 @@ parse_second_from_buffer:
     bl write_call
     
     
-    mov x1, x23  // Restore buffer position
+    mov x1, x23
     bl parse_number
     cmp x2, #0
     b.ne error_exit
@@ -191,12 +191,11 @@ parse_number:
     stp x29, x30, [sp, #-16]!
     mov x29, sp
     
-    mov x0, #0   // result
-    mov x3, #10  // base
-    mov x4, #0   // sign (0=positive, 1=negative)
-    mov x5, #0   // digit count
+    mov x0, #0
+    mov x3, #10
+    mov x4, #0
+    mov x5, #0
     
-    // Skip leading whitespace (space, tab)
 skip_whitespace:
     ldrb w2, [x1]
     cmp w2, #' '
@@ -209,7 +208,7 @@ skip_ws_char:
     b skip_whitespace
     
 check_sign:
-    // Check for negative
+
     ldrb w2, [x1]
     cmp w2, #'-'
     b.ne parse_digits
